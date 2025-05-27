@@ -6,7 +6,14 @@ from app.db.session import get_db
 from app.models import models
 from app.schemas import schemas
 
+from app.schemas.schemas import JobDescriptionRequest, JobDescriptionResponse
+from app.models.models import JobPosting, Company  # Assuming Company model exists
+from openai import OpenAI
+import datetime, os
+
 router = APIRouter()
+
+client = OpenAI()
 
 #/jobs
 # {  company_id: 1
@@ -75,3 +82,59 @@ def delete_job_posting(job_id: int, db: Session = Depends(get_db)):
     db.delete(db_job)
     db.commit()
     return {"message": "Job posting deleted successfully"} 
+
+
+
+
+#Homework 
+
+@router.post("/{job_id}/description", response_model=schemas.JobDescriptionResponse)
+async def generate_job_description(
+    job_id: int,
+    req: schemas.JobDescriptionRequest,
+    db: Session = Depends(get_db)
+):
+    # 1. Fetch job posting & company from DB
+    job = db.query(models.JobPosting).filter(models.JobPosting.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job posting not found")
+    
+    company = db.query(models.Company).filter(models.Company.id == job.company_id).first()
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+
+    # 2. Build prompt for GPT
+    required_tools_str = ", ".join(req.required_tools)
+    prompt = (
+        f"Write a detailed job description for the following position:\n"
+        f"Company: {company.name}\n"              #\n - is a new line
+        f"Job Title: {job.title}\n"
+        f"Required Tools: {required_tools_str}\n"
+        f"Include responsibilities and qualifications."
+    )
+
+    # 3. Call OpenAI API
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant that writes professional job descriptions."},
+            {"role": "user", "content": prompt},
+        ]
+    )
+
+    description = response.choices[0].message.content.strip()
+
+    # 4. Save description to DB
+    job.description = description
+    db.commit()
+    db.refresh(job)
+
+    # 5. Return response
+    return schemas.JobDescriptionResponse(
+        job_id=job.id,
+        description=description,
+        generated_at=datetime.datetime.utcnow()
+    )
+             

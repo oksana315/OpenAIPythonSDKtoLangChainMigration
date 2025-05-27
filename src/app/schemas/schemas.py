@@ -1,5 +1,6 @@
 from pydantic import BaseModel, HttpUrl
 from typing import Optional, List
+from datetime import datetime
 
 # Company Schemas
 class CompanyBase(BaseModel):
@@ -45,3 +46,11 @@ class JobPosting(JobPostingBase):
 
     class Config:
         from_attributes = True 
+
+class JobDescriptionRequest(BaseModel):
+    required_tools: List[str]
+
+class JobDescriptionResponse(BaseModel):
+    job_id: int
+    description: str
+    generated_at: datetime

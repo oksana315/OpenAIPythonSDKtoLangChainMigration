@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, Text
 from sqlalchemy.orm import relationship
 
 from app.db.session import Base
@@ -28,5 +28,6 @@ class JobPosting(Base):
     compensation_max = Column(Float)
     location_type = Column(String)
     employment_type = Column(String)
+    description = Column(Text, nullable=True)  # addednew field, nullable initially
 
     company = relationship("Company", back_populates="job_postings") 
