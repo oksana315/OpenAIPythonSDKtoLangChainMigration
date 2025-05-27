@@ -3,7 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "postgresql://postgres.dlhnsfcfpwcyaurrxhez:7718141518@aws-0-us-east-2.pooler.supabase.com:5432/postgres"
+    DATABASE_URL: str = "postgresql://postgres.dlhnsfcfpwcyaurrxhez:pswd@aws-0-us-east-2.pooler.supabase.com:5432/postgres"
     
     class Config:
         env_file = ".env"
